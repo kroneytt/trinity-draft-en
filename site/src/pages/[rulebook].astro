@@ -1,0 +1,198 @@
+---
+// One page per format, built from the Markdown rulebooks in ../rules/.
+// rulebook.html is the standard 3-player game; the others are rulebook-<format>.html.
+import Base from "../layouts/Base.astro";
+import { FORMATS } from "../lib/rules";
+import { popupIndex, type PopupCard } from "../lib/popup";
+
+export function getStaticPaths() {
+  return FORMATS.map((f) => ({ params: { rulebook: f.page }, props: { key: f.key } }));
+}
+
+const books = import.meta.glob<{ compiledContent: () => Promise<string>; getHeadings: () => { depth: number; slug: string; text: string }[] }>(
+  "../../../rules/*.md", { eager: true },
+);
+const { key } = Astro.props as { key: string };
+const format = FORMATS.find((f) => f.key === key)!;
+const book = books[`../../../rules/${key}.md`];
+const chapters = book.getHeadings().filter((h) => h.depth === 2);
+
+// Rule references become links: "(7.1)", "see 2.4", "chapter 8" go to that section of this book;
+// "Standard rulebook, 4.1" / "Standard rulebook, chapter 8" go to the Standard rulebook.
+type Heading = { depth: number; slug: string; text: string };
+const sectionMap = (hs: Heading[]) => {
+  const m = new Map<string, string>();
+  for (const h of hs) {
+    const n = h.text.match(/^(\d+(?:\.\d+)?)\.?\s/);
+    if (n && !m.has(n[1])) m.set(n[1], h.slug);
+  }
+  return m;
+};
+const own = sectionMap(book.getHeadings());
+const std = sectionMap(books["../../../rules/three-player.md"].getHeadings());
+const STD_PAGE = FORMATS[0].page + ".html";
+const REF = /\b(Standard rulebook)(?:, (?:chapter (\d+)|(\d+\.\d+)))?|\b([Cc]hapters? )(\d+)|(?<![\d.])(\d{1,2}\.\d)(?![\d.])/g;
+function linkRules(src: string): string {
+  let skip = 0;                                       // inside a heading or a link
+  return src.split(/(<[^>]+>)/).map((part) => {
+    const tag = part.match(/^<(\/?)(h[1-6]|a)\b/i);
+    if (tag) { skip += tag[1] ? -1 : 1; return part; }
+    if (part.startsWith("<") || skip > 0) return part;
+    return part.replace(REF, (m, stdName, stdCh, stdSec, chWord, ch, sec) => {
+      if (stdName) {
+        const slug = std.get(stdCh || stdSec || "");
+        const href = key === "three-player" ? (slug ? `#${slug}` : "#") : STD_PAGE + (slug ? `#${slug}` : "");
+        return `<a class="rule-ref" href="${href}">${m}</a>`;
+      }
+      const slug = own.get(ch || sec);
+      if (!slug) return m;
+      return `<a class="rule-ref" href="#${slug}">${m}</a>`;
+    });
+  }).join("");
+}
+
+// The Markdown is shared with GitHub, so two small markers do the web-only work:
+//   <!-- web:hide --> ... <!-- /web:hide -->           left out here (a plain table GitHub shows instead)
+//   <div class="card-strip" data-cards="ID,ID"></div>  a row of card images; each opens a popup
+const cards = popupIndex();
+const used: PopupCard[] = [];
+const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+let html = (await book.compiledContent())
+  .replace(/<!--\s*web:hide\s*-->[\s\S]*?<!--\s*\/web:hide\s*-->/g, "")
+  .replace(/<div class="card-strip" data-cards="([^"]+)"><\/div>/g, (_, ids: string) => {
+    const items = ids.split(",").map((id) => cards.get(id.trim())).filter((c): c is PopupCard => !!c);
+    for (const c of items) if (!used.includes(c)) used.push(c);
+    return `<div class="card-strip">${items.map((c) =>
+      `<button type="button" class="rb-card" data-id="${c.id}" aria-haspopup="dialog">` +
+      `<img src="${c.thumb}" alt="" width="480" height="670" loading="lazy" decoding="async" />` +
+      `<span>${esc(c.name)}</span></button>`).join("")}</div>`;
+  });
+html = linkRules(html);
+---
+<Base title={format.title} nav="rules" description={format.description}>
+  <div class="glossary rulebook">
+    <aside class="g-side">
+      <h1 class="rb-title">Rulebook</h1>
+      <nav class="rb-formats" aria-label="Format">
+        {FORMATS.map((f) => (
+          <a href={`${f.page}.html`} aria-current={f.key === key ? "page" : undefined}>
+            {f.label}<span>{f.players}</span>
+          </a>
+        ))}
+      </nav>
+      <p class="rb-side-label" id="rb-contents">Contents</p>
+      <nav class="rb-toc" aria-labelledby="rb-contents">
+        {chapters.map((h) => <a href={`#${h.slug}`}>{h.text}</a>)}
+      </nav>
+    </aside>
+
+    <article class="g-main rb-body">
+      <Fragment set:html={html} />
+    </article>
+  </div>
+
+  {used.length > 0 && (
+    <dialog class="card-dialog" id="card-dialog" aria-labelledby="cd-name">
+      <div class="cd-head">
+        <div class="cd-title">
+          <h2 id="cd-name" tabindex="-1" autofocus></h2>
+          <p class="cd-meta" id="cd-meta"></p>
+        </div>
+        <div class="cd-actions">
+          <span class="pill" id="cd-type"></span>
+          <a class="icon-btn" id="cd-lib" title="Open in the card list" aria-label="Open in the card list">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></g></svg>
+          </a>
+          <button type="button" class="icon-btn" id="cd-close" title="Close" aria-label="Close">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M6 6l12 12M18 6 6 18"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="cd-body">
+        <img id="cd-img" alt="" width="744" height="1039" />
+        <div class="cd-info">
+          <p class="cd-jp" lang="ja" id="cd-jp"></p>
+          <div class="stats" id="cd-stats"></div>
+          <div class="tags" id="cd-traits"></div>
+          <div class="textbox" id="cd-text"></div>
+        </div>
+      </div>
+      <div class="cd-foot">
+        <button type="button" class="btn" id="cd-prev">Previous</button>
+        <button type="button" class="btn" id="cd-next">Next</button>
+      </div>
+    </dialog>
+    <script type="application/json" id="rb-card-data" set:html={JSON.stringify(used).replace(/</g, "\\u003c")} />
+  )}
+
+  <script is:inline>
+    // Card popups: a row of cards in the rulebook opens the same popup as the card list.
+    (() => {
+      const data = document.getElementById("rb-card-data");
+      const dialog = document.getElementById("card-dialog");
+      if (!data || !dialog) return;
+      const CARDS = Object.fromEntries(JSON.parse(data.textContent).map((c) => [c.id, c]));
+      const $ = (id) => document.getElementById(id);
+      const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;");
+      let row = [], at = -1;
+      function show(i) {
+        at = i;
+        const c = CARDS[row[i]];
+        $("cd-name").textContent = c.name;
+        $("cd-meta").textContent = c.meta;
+        $("cd-type").textContent = c.type;
+        $("cd-jp").textContent = c.jp;
+        $("cd-img").src = c.img;
+        $("cd-img").alt = `${c.name} (English card image)`;
+        $("cd-stats").innerHTML = c.stats;
+        $("cd-traits").innerHTML = c.traits.map((t) => `<span class="pill">${esc(t)}</span>`).join("");
+        let t = c.text.map((h) => `<p>${h}</p>`).join("");
+        if (c.extra) t += `<p class="${c.extraClass}">${c.extra}</p>`;
+        $("cd-text").innerHTML = t;
+        $("cd-lib").hidden = !c.library;
+        $("cd-lib").href = `index.html?card=${encodeURIComponent(c.id)}`;
+        $("cd-prev").disabled = i <= 0;
+        $("cd-next").disabled = i >= row.length - 1;
+        if (!dialog.open) dialog.showModal();
+      }
+      document.addEventListener("click", (e) => {
+        const b = e.target.closest(".rb-card");
+        if (!b) return;
+        row = [...b.parentElement.querySelectorAll(".rb-card")].map((x) => x.dataset.id);
+        show(row.indexOf(b.dataset.id));
+      });
+      $("cd-close").addEventListener("click", () => dialog.close());
+      dialog.addEventListener("click", (e) => { if (e.target === dialog) dialog.close(); });
+      $("cd-prev").addEventListener("click", () => at > 0 && show(at - 1));
+      $("cd-next").addEventListener("click", () => at < row.length - 1 && show(at + 1));
+      dialog.addEventListener("keydown", (e) => {
+        if (e.key === "ArrowLeft" && at > 0) show(at - 1);
+        if (e.key === "ArrowRight" && at < row.length - 1) show(at + 1);
+      });
+    })();
+  </script>
+
+  <script is:inline>
+    // Highlight the chapter being read in the contents list.
+    (() => {
+      const links = new Map([...document.querySelectorAll(".rb-toc a")].map((a) => [a.hash.slice(1), a]));
+      const heads = [...document.querySelectorAll(".rb-body h2[id]")].filter((h) => links.has(h.id));
+      if (!heads.length || !("IntersectionObserver" in window)) return;
+      let current;
+      const mark = (id) => {
+        if (id === current) return;
+        current = id;
+        links.forEach((a, k) => a.classList.toggle("is-here", k === id));
+      };
+      const update = () => {
+        let id = heads[0].id;
+        for (const h of heads) if (h.getBoundingClientRect().top < 120) id = h.id;
+        mark(id);
+      };
+      new IntersectionObserver(update, { rootMargin: "0px 0px -60% 0px" }).observe(document.body);
+      heads.forEach((h) => new IntersectionObserver(update, { rootMargin: "0px 0px -60% 0px" }).observe(h));
+      addEventListener("scroll", update, { passive: true });
+      update();
+    })();
+  </script>
+</Base>

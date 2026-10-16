@@ -1,0 +1,79 @@
+---
+import "../styles/site.css";
+
+interface Props {
+  title: string;              // page title (without the site name)
+  description: string;
+  nav?: "cards" | "rules" | "glossary" | "draft";
+}
+const { title, description, nav } = Astro.props;
+const siteUrl = new URL(import.meta.env.BASE_URL.replace(/\/?$/, "/"), Astro.site);
+const pageUrl = new URL(Astro.url.pathname.replace(import.meta.env.BASE_URL, "").replace(/^\//, ""), siteUrl);
+const fullTitle = title === "Cards" ? "Trinity Draft English card database" : `${title} | Trinity Draft English`;
+const REPO = "https://github.com/kroneytt/trinity-draft-en";
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={pageUrl.href} />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Trinity Draft English" />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={pageUrl.href} />
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <script is:inline>
+      // Dark by default; the toggle remembers the choice in this browser.
+      try { const t = localStorage.getItem("theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch (e) {}
+    </script>
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+    <header class="topbar">
+      <div class="topbar-in">
+        <a class="site-name" href="index.html">Trinity Draft <span>English</span></a>
+        <nav class="site-nav" aria-label="Main">
+          <a href="index.html" aria-current={nav === "cards" ? "page" : undefined}>Cards</a>
+          <a href="rulebook.html" aria-current={nav === "rules" ? "page" : undefined}>Rulebook</a>
+          <a href="glossary.html" aria-current={nav === "glossary" ? "page" : undefined}>Glossary</a>
+          <a href="draft.html" aria-current={nav === "draft" ? "page" : undefined}>Box &amp; Draft Odds</a>
+        </nav>
+        <div class="topbar-tools">
+          <a class="icon-btn" href={REPO} title="Card data on GitHub" aria-label="Card data on GitHub">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+          </a>
+          <button class="icon-btn" id="theme-toggle" type="button" aria-label="Switch between dark and light theme" title="Switch theme">
+            <svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+            <svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></g></svg>
+          </button>
+        </div>
+      </div>
+    </header>
+    <main id="main">
+      <slot />
+    </main>
+    <footer class="site-foot">
+      <p>
+        Unofficial fan translation of <a href="https://trinitydraft.com/">Trinity Draft</a>.
+        Trinity Draft, its card art, names and rules are © 2025 Mikiseishindo / AsobiDays.
+        Not affiliated with the publisher. Please support the official release.
+      </p>
+      <p>
+        <a href={REPO}>GitHub</a>
+        <a href={`${REPO}/blob/main/cards/style_guide.md`}>Translation style guide</a>
+        <a href={`${REPO}/issues`}>Report a translation problem</a>
+      </p>
+    </footer>
+    <script is:inline>
+      document.getElementById("theme-toggle").addEventListener("click", () => {
+        const next = document.documentElement.dataset.theme === "light" ? "dark" : "light";
+        document.documentElement.dataset.theme = next;
+        try { localStorage.setItem("theme", next); } catch (e) {}
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,99 @@
+---
+import Base from "../layouts/Base.astro";
+import { loadCards, loadDefinitions, loadGlossary, searchText } from "../lib/cards";
+import { cardTextHtml, glossaryTerms, slug, termKey, SECTIONS } from "../lib/text";
+
+const glossary = loadGlossary();
+const definitions = loadDefinitions();
+const cards = loadCards();
+const texts = cards.map(searchText);
+
+// How each term links back to the card list, and how many cards use it.
+// Tags search for their full written form, e.g. "[On Attack]"; a numbered or "X" form
+// searches for the part every card shares, e.g. "[Shinra Summon", "[Reduced Summon:" or "<Soul Flare".
+function usage(section: string, en: string) {
+  if (section === "traits") return { count: cards.filter((c) => c.traits.includes(en)).length, href: `index.html?trait=${encodeURIComponent(en)}` };
+  if (section === "rarities") return { count: cards.filter((c) => c.Rarity === en).length, href: `index.html?rarity=${encodeURIComponent(en)}` };
+  if (section === "colors") return { count: cards.filter((c) => c.colorKeys.includes(en)).length, href: `index.html?color=${encodeURIComponent(en)}` };
+  if (/\bN\b/.test(en) && !/^[[<(]/.test(en)) {      // "Pay N Color": any number, counted only (no single search for it)
+    const re = new RegExp(`\\b${en.toLowerCase().replace(/\bn\b/, "\\d+")}\\b`);
+    return { count: texts.filter((t) => re.test(t)).length, href: "" };
+  }
+  let q = en;
+  if (/ N\]$/.test(q)) q = q.replace(/ N\]$/, "");
+  else if (/: X\]$/.test(q)) q = q.replace(/ X\]$/, "");
+  else if (q.startsWith("(X/")) q = q.slice(2);
+  else if (q.startsWith("<")) q = q.slice(0, -1);      // "<Overdrive" matches <Overdrive 5> and <Overdrive>
+  let count: number;
+  if (/^[[<(/]/.test(q)) count = texts.filter((t) => t.includes(q.toLowerCase())).length;
+  else {
+    if (q.length < 3) return { count: 0, href: "" };
+    const re = new RegExp(`\\b${q.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`);
+    count = texts.filter((t) => re.test(t)).length;
+  }
+  const qs = /\s/.test(q) && !/^[[<(]/.test(q) ? `"${q}"` : q;
+  return { count, href: count ? `index.html?q=${encodeURIComponent(qs)}` : "" };
+}
+const isTag = (en: string) => /^[[<]/.test(en);
+const sections = SECTIONS.filter(([k]) => glossary[k]);
+---
+<Base
+  title="Glossary"
+  nav="glossary"
+  description="Every game term in the Trinity Draft English translation with its Japanese original and a short rules description."
+>
+  <div class="glossary">
+    <aside class="g-side">
+      <h1>Glossary</h1>
+      <nav aria-label="Glossary sections">
+        {sections.map(([k, name]) => (
+          <a href={`#${k}`}>{name}<span>{Object.keys(glossary[k]).length}</span></a>
+        ))}
+      </nav>
+    </aside>
+
+    <div class="g-main">
+      <p class="lead">
+        Every game term in the translation, with the Japanese original and what it means in the rules.
+        The number on the right is how many cards use the term; select it to see those cards.
+        Numbers in the descriptions (deck sizes, Life piles, the 12 Gained Life to win) are for the Standard game;
+        the <a href="rulebook-duel.html">DUEL</a> and <a href="rulebook-singularity.html">Singularity</a> rulebooks change some of them.
+      </p>
+      <p class="note">
+        On cards, <span class="kw">[square brackets]</span> mark timings, actions and card-type tags, and
+        <span class="kw">&lt;angle brackets&gt;</span> mark keyword abilities. Zones and other nouns have no brackets.
+      </p>
+
+      {sections.map(([k, name, intro]) => (
+        <section id={k} class="g-section">
+          <div class="g-head">
+            <h2>{name}</h2>
+            {intro && <p>{intro}{k === "rarities" && <> The full box contents and draft odds are on <a href="draft.html">Box &amp; Draft Odds</a>.</>}</p>}
+          </div>
+          <div class="g-list" role="table" aria-label={name}>
+            <div class="g-row g-labels" role="row">
+              <span role="columnheader">English</span>
+              <span role="columnheader">Description</span>
+              <span role="columnheader">Japanese</span>
+              <span role="columnheader" class="n">Cards</span>
+            </div>
+            {Object.entries(glossary[k]).map(([jp, en]) => {
+              const u = usage(k, en);
+              const t = glossaryTerms().get(termKey(en));
+              const anchor = t && t.section === k && t.jp === jp ? slug(t.key) : undefined;
+              const def = definitions[k]?.[en];
+              return (
+                <div class="g-row" role="row" id={anchor}>
+                  <span class="g-term" role="cell">{isTag(en) ? <span set:html={cardTextHtml(en, null)} /> : en}</span>
+                  <span class="g-def" role="cell">{def ?? ""}</span>
+                  <span class="g-jp" role="cell" lang="ja">{jp}</span>
+                  <span class="n" role="cell">{u.href ? <a href={u.href} aria-label={`${u.count} cards with ${en}`}>{u.count}</a> : u.count ? u.count : <span class="muted">–</span>}</span>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      ))}
+    </div>
+  </div>
+</Base>

@@ -1,0 +1,143 @@
+{
+  "_notes": "Short rules descriptions for the terms in master_glossary.json: same sections, keyed by the English term exactly as written there. Based on the official rulebooks and the card text. Traits only have an entry where the rules say something about them.",
+  "stages": {
+    "1st Stage: Draft": "Played in 3 rounds. Each round every player opens a pack, takes 1 card and passes the rest, until the packs are empty; the passing direction changes each round. Each player ends with 39 cards.",
+    "2nd Stage: Build": "Each player splits their 39 drafted cards into a 23-card Main Deck and a 16-card Life Deck, and chooses 1 of their Epic Cards.",
+    "Final Stage: Battle": "The game itself. You win when your left and right Gained Life add up to 12.",
+    "Draw Phase": "Draw 1 card. The first player draws on turn 1 too. If your Deck is empty, Rerise instead.",
+    "Active Phase": "Turn all your cards on the Battlefield and in your Color Zone [Active] (upright).",
+    "Main Phase": "Comes twice each turn, before and after the Combat Phase. In any order and as often as you like: play cards, set Shadow Cards, use [Activate] effects and use the Reserve. Color Charge only once per turn across both Main Phases.",
+    "Combat Phase": "Attack with your Active Units one at a time, each against one opponent. Units that entered the Battlefield this turn can't attack unless they have Quick Aura.",
+    "End Phase": "Effects that happen at the end of the turn resolve and \"during this turn\" effects end. Then the next player's turn starts."
+  },
+  "zones": {
+    "Deck": "Your Main Deck once the game starts, face down. You draw from it. Epic Cards are shuffled into it instead of going to the Graveyard.",
+    "Main Deck": "The 23 cards you build to play with: your Units and Spells. Shuffled at the start of the game to become your Deck.",
+    "Hand": "The cards you can play. There is no Hand size limit, and how many cards each player holds is public.",
+    "Graveyard": "Where used, discarded and destroyed cards go. Anyone may look through any Graveyard.",
+    "Judgment Area": "An unseen area that is neither the Battlefield nor the Graveyard. A destroyed card, or a [Shot] Spell being used, waits here until every stacked effect has resolved, then goes to the Graveyard. Effects can't choose cards here.",
+    "Battlefield": "Where your Units, [Set] Spells and [Equip] Spells stay. There is no card limit. The Shadow Zone, Color Zone, Reserve and Souls are not part of the Battlefield.",
+    "Life Zone": "Where your Life Deck sits: shuffled at the start of the game and split into two piles of 8, one at your left Wall and one at your right Wall. When an attack gets past a Wall, it hits the pile at that Wall.",
+    "Life Deck": "The 16 cards you build to defend with. They are placed in your Life Zone, and each card flipped by damage can use its Burst. Color and Cost don't matter here, and Epic Cards can't go in it.",
+    "Gained Life": "The Life cards you have taken from opponents' Life Zones, kept on your left and right. 12 in total wins the game.",
+    "Color Zone": "Holds your Basic Color Cards. Rest them to pay Costs. There is no card limit.",
+    "Shadow Zone": "3 face-down slots for Shadow Cards, set during your Main Phase. When all 3 are full you can't set another.",
+    "Wall": "Each pair of neighboring players shares a Wall on a track between them. Damage pushes it 1 space toward the defending player per point; once it reaches their end, the rest of the damage hits their Life Zone.",
+    "Reserve": "Holds your Trinity Counters; your chosen Epic waits face down in front of it until the game starts. Its effects: Trinity Charge (pay 3 Color for 1 Trinity Counter, once per turn) and Trinity Draw (remove 3 Trinity Counters to draw 1 card).",
+    "Trinity Counter": "Counters kept in your Reserve, up to 10. Gained from the Reserve or card effects, and used by <Overcount>, <Counter Flare> and <Counter Vortex>."
+  },
+  "card_types": {
+    "Unit": "Pay its Cost to summon it onto the Battlefield. Units have Power and Break, attack opponents' Walls and block attacks.",
+    "Spell": "A card that isn't a Unit. Every Spell is an [Equip], [Set] or [Shot] Spell.",
+    "[Equip] Spell": "Pay its Cost to put it onto the Battlefield, then pay its [Equip Cost] to attach it to one of your Units, which gets the bonus printed on it. It stays on the Battlefield if the Unit leaves.",
+    "[Set] Spell": "Pay its Cost to put it onto the Battlefield, where its effects keep working. It can't attack or block.",
+    "[Shot] Spell": "Pay its Cost and resolve its effect, then it goes to the Graveyard.",
+    "Color Card": "Another name for the Basic Color Cards: the cards in your Color Zone that you Rest to pay Costs.",
+    "Shadow Card": "Any card with the Shadow type. Set it face down in your Shadow Zone during your Main Phase, then flip it and use it without paying a Cost whenever its Shadow Condition is met, even on an opponent's turn.",
+    "Epic Card": "Each player gets the expansion's 4 Epics and chooses 1 for the Battle. It starts face down in front of your Reserve and goes to your Hand when the game begins. Epics can't go in the Life Deck and aren't drafted.",
+    "Shadow Unit": "A Shadow Card that is also a Unit, so it counts as both.",
+    "Shadow Spell": "A Shadow Card that is also a Spell, so it counts as both.",
+    "Shadow [Shot] Spell": "A Shadow Card that works like a [Shot] Spell once it is used.",
+    "Basic Color Card": "The cards you pay Costs with, one for each color, taken from the shared pile. Color Charge puts one Active into your Color Zone; they go back to the pile when they leave it.",
+    "Shadow": "The card type every Shadow Card has, alongside Unit or Spell. Shadow Cards have a Cost of 0 unless an effect raises it.",
+    "Shadow [Equip] Spell": "A Shadow Card that works like an [Equip] Spell once it is used."
+  },
+  "attributes": {
+    "Cost": "How much Color you pay (by Resting Basic Color Cards) to use the card, shown top left. For Cost X you choose the amount. Shadow Cards have a Cost of 0. Compare Summoning Cost, Pay N Color and [Equip Cost].",
+    "Power": "Units only. In a battle the Unit with lower Power is destroyed; on a tie both are.",
+    "Break": "Units only. The damage an unblocked attack deals: each point pushes the Wall 1 space, or hits the Life Zone once the Wall is at the end.",
+    "Burst": "The effect printed at the bottom of a card, marked [Burst]. It is used when the card is flipped from a Life Zone during a Burst Check.",
+    "Trait": "Shown on Units under the card name, such as Dragon or Machine. Card text can refer to Units by their Trait.",
+    "Color Condition": "The colors the Basic Color Cards you Rest must include. \"1 Yellow, 1 Purple\" on a Cost 3 card means 3 Color, including at least 1 Yellow and 1 Purple.",
+    "Shadow Condition": "When a Shadow Card in your Shadow Zone can be flipped and used."
+  },
+  "timings": {
+    "[On Entry]": "Happens when the card enters the Battlefield, even if it wasn't summoned.",
+    "[On Attack]": "Happens when the Unit attacks.",
+    "[On Destroy]": "Happens when the card is destroyed on the Battlefield. Not used when it is sent to the Graveyard without being destroyed.",
+    "[Trigger]": "Happens at the moment written after it, such as at the end of the turn or when the equipped Unit attacks.",
+    "[Activate]": "You may use it during your Main Phase.",
+    "[Graveyard Activate]": "You may use it from your Graveyard during your Main Phase.",
+    "[Continuous]": "Keeps working while the card is on the Battlefield.",
+    "[Burst]": "The tag that starts a Burst effect. The effect is used during a Burst Check and must be used unless it says it is optional.",
+    "[EPIC Rule]": "The rule every Epic Card has: your chosen Epic starts in your Hand, and instead of going to the Graveyard it is shuffled into your Deck.",
+    "[Equip Cost]": "What you pay to attach an [Equip] Spell on your Battlefield to a Unit, or to move it to another Unit.",
+    "[Oni Charge]": "Happens when you discard the card for Color Charge. The effect must be used, and it resolves before you gain the Basic Color Card.",
+    "[Jigoku Back]": "When an effect sends the card from your Deck to the Graveyard (for example milling, or checking or revealing the top card and sending it), you may put it onto the Battlefield without paying its Cost."
+  },
+  "actions_states": {
+    "[Rest]": "Turn a card sideways. A Rested Unit can't attack or block, and a Rested Basic Color Card can't pay Costs.",
+    "[Active]": "Turn a card upright, so it can attack, block or pay Costs.",
+    "[Advantage]": "A Wall that is closer to the opponent than to you. Each opponent's Wall is counted once.",
+    "[Disadvantage]": "A Wall that is closer to you than to the opponent. The first player's Walls start at [Disadvantage].",
+    "Soul": "Cards stacked under a Unit by Shinra Summon, Gattai, Abyss Gate or other effects. Souls aren't on the Battlefield, and they go to the Graveyard when the Unit leaves it.",
+    "Summoning Cost": "The Cost you pay to summon a Unit from your Hand. Reduced Summon, Zero Summon and Color Shift change how it is paid.",
+    "Destroy": "Removes a card from the Battlefield and uses its [On Destroy] effects. The card waits in the Judgment Area until all stacked effects resolve, then goes to the Graveyard. Compare \"send to the Graveyard\", which is not destruction.",
+    "Reveal": "Show the card to every player. Compare Check, where only you look.",
+    "Check": "Look at a card yourself without showing anyone. A checked card stays where it was, so a checked Deck card is still in the Deck.",
+    "Search": "Look through your Deck for the card the effect names and add it to your Hand. Always shuffle your Deck afterwards, even if the card doesn't say so.",
+    "in turn order": "Starting with the turn player and going round the table in play order.",
+    "(This is not destruction)": "The card leaves the Battlefield without being destroyed, so [On Destroy] effects and Shadows that wait for destruction can't be used.",
+    "(Optional)": "You choose whether to use the effect when it happens. If you can't pay its cost at that moment, you can't choose to use it."
+  },
+  "mechanics": {
+    "Active / Rest": "A card's orientation: upright (Active) or sideways (Rest). Cards become Rested when used and turn Active again in your Active Phase.",
+    "Color Charge": "Once per turn in your Main Phase: discard 1 card from your Hand and put a Basic Color Card of its color Active into your Color Zone. For a multi-color card, choose one of its colors. Colorless cards can't be used, and a discarded Epic is shuffled into your Deck.",
+    "Rerise": "If your Deck is empty when you would draw in your Draw Phase, shuffle your whole Graveyard to make a new Deck, then draw 3 cards instead of 1. It only happens in the Draw Phase: other draw effects just draw what is left.",
+    "Trinity Charge": "A Reserve effect, once per turn in your Main Phase: pay 3 Color to get 1 Trinity Counter.",
+    "Trinity Draw": "A Reserve effect in your Main Phase: remove 3 Trinity Counters from your Reserve to draw 1 card.",
+    "Block": "When an opponent attacks you, you may Rest one of your Active Units to block. The two Units battle, and the attack deals no damage.",
+    "Burst Check": "For each 1 damage that hits a Life Zone, flip the top card of the Life pile at that Wall and use its Burst. Then the card goes to the attacker's Gained Life.",
+    "Punish Burn": "When the Life pile you are attacking reaches 0, the rest of that attack's damage is cancelled and the Wall is pushed back to the other end of its track, next to you. You are now at a [Disadvantage] there and the player you hit has the [Advantage]. Moving the Wall isn't damage. The last card's Burst is used after the Wall moves.",
+    "Adjust": "Adjust N: check the top N cards of your Deck and put them on the top or bottom of your Deck in any order.",
+    "(X/Turn)": "The effect can be used X times per turn.",
+    "(No Cost)": "Using the effect costs nothing.",
+    "Condition band": "The part of an ability before ▶: a cost to pay or a condition to meet, often written \"<Keyword> - what it means\". If you can't pay or meet it, nothing after ▶ happens. It is paid or checked when the effect resolves, not when it is used.",
+    "Pay N Color": "A cost in a Condition band, common on [Activate] effects and Equip Costs: Rest N Basic Color Cards of any color.",
+    "If you do": "What follows happens only if you did everything asked just before it.",
+    "Then": "What follows happens even if you couldn't do what came before it.",
+    "Betrayal": "A harmful Burst, such as VOID's: if the card is flipped during a Burst Check, you take 1 damage."
+  },
+  "keywords": {
+    "<Overdrive>": "<Overdrive N> works only if you have N or more Gained Life.",
+    "<Overcount>": "<Overcount N> works only while you have N or more Trinity Counters in your Reserve.",
+    "<Requiem>": "<Requiem N> works only if N or more Units have been sent from any player's Battlefield to the Graveyard this turn. Souls and Shadow Zone cards don't count.",
+    "<Alchemy>": "Destroy one of your own [Equip] or [Set] Spells on the Battlefield to use the effect. Cards in your Shadow Zone can't be used for it.",
+    "<Counter Flare>": "<Counter Flare N>: remove N Trinity Counters from your Reserve to use the effect.",
+    "<Counter Vortex>": "Remove 10 Trinity Counters from your Reserve, the most you can have, to use the effect.",
+    "<Soul Flare>": "<Soul Flare N>: send N Souls from under this card to the Graveyard to use the effect. You choose which Souls.",
+    "<Bloody Drive>": "<Bloody Drive N>: choose one of your [Advantage] Walls and take N damage on it to use the effect. You can't use it without an [Advantage] Wall. The damage also lets you use effects and Shadows that happen when damage occurs.",
+    "<Abyss Gate>": "<Abyss Gate N>: put N of the cards the effect names from your Graveyard into this card's Soul to use the effect.",
+    "<Life Eater>": "Used once per attack when this Unit's attack hits the Life Zone, before the Burst Check. Hitting only a Wall doesn't count.",
+    "<Gattai>": "Put the listed number of Machines or other named cards from your Battlefield into this Unit's Soul to power it up. The boost lasts while the Unit stays on the Battlefield, even if those cards leave its Soul.",
+    "[Shinra Summon N]": "Instead of paying the Cost, put this Unit on top of Units on your Battlefield whose Costs add up to exactly N; they become its Soul. It enters Active, but still can't attack that turn without Quick Aura.",
+    "[Reduced Summon: X]": "When you summon this Unit, its Cost is reduced for each X, as the card says. You still have to meet its Color Condition.",
+    "[Zero Summon: X]": "If X is true when you summon this Unit in your Main Phase, its Summoning Cost becomes 0 and it loses its Color Condition.",
+    "[Color Shift N]": "When you pay a Summoning Cost, you may send this Unit from your Battlefield to the Graveyard to produce N Color of its color. This isn't destruction. It can't pay for Spells or [Activate] effects."
+  },
+  "auras": {
+    "Quick Aura": "Can attack the turn it enters the Battlefield.",
+    "Sky Aura": "Can't be blocked by Units without Sky Aura.",
+    "Bad Aura": "When this Unit loses a battle, the Unit that beat it is destroyed too.",
+    "Steal Aura": "Its attacks ignore Walls and hit the Life Zone directly."
+  },
+  "traits": {
+    "Machine": "<Gattai> puts Machines into a Unit's Soul.",
+    "Void": "VOID, Void Assassin (TD-01) and Void Master (TD-02) have this Trait."
+  },
+  "colors": {
+    "Red": "One of the four colors. Discarding a Red card for Color Charge gives you a Red Basic Color Card.",
+    "Yellow": "One of the four colors. Discarding a Yellow card for Color Charge gives you a Yellow Basic Color Card.",
+    "Blue": "One of the four colors. Discarding a Blue card for Color Charge gives you a Blue Basic Color Card.",
+    "Purple": "One of the four colors. Discarding a Purple card for Color Charge gives you a Purple Basic Color Card.",
+    "Colorless": "Has no color, so it can't be used for Color Charge."
+  },
+  "rarities": {
+    "Common": "4 copies of each Common in a box.",
+    "Uncommon": "3 copies of each Uncommon in a box.",
+    "Rare": "2 copies of each Rare in a box. Rares are foil cards.",
+    "Legend": "1 copy of each Legend in a box. Legends are holo cards.",
+    "Epic": "Not in packs. Each player is dealt one of each Epic before the draft.",
+    "Void": "9 copies of VOID in a box. Its Burst makes you take damage."
+  }
+}

@@ -1,0 +1,361 @@
+---
+import Base from "../layouts/Base.astro";
+import { loadCards, searchText, RARITIES, COLORS, SETS } from "../lib/cards";
+import { cardTextHtml } from "../lib/text";
+
+const cards = loadCards();
+const traits = [...new Set(cards.flatMap((c) => c.traits))].sort();
+const COSTS = ["1", "2", "3", "4", "5", "6", "7", "8", "9+", "X"];
+const TYPES = ["Unit", "Shot Spell", "Set Spell", "Equip Spell", "Shadow"];
+const costKey = (cost: unknown) =>
+  cost === null || cost === undefined ? "" : cost === "X" ? "X" : Number(cost) >= 9 ? "9+" : String(cost);
+const baseType = (t: string) => t.replace(/^Shadow /, "").replace(/\[|\]/g, "");
+const setRank = { blaze: 0, phantom: 1, shared: 2 } as const;
+
+// Everything the popup needs, with the card text already turned into HTML.
+const data = cards.map((c) => ({
+  id: c.id,
+  name: c["English Name"],
+  jp: c["Japanese Name"],
+  num: `${c.setCode} ${c.number}`,
+  set: c.setName,
+  rarity: c.Rarity,
+  type: c.CardType.replace(/\[|\]/g, ""),
+  cost: c.Cost,
+  power: c.Power,
+  brk: c.Break,
+  color: c.colorKeys,
+  cond: c["Color Condition"] === "Colorless" ? "Colorless" : c.colors.map((x) => `${x.n} ${x.color}`).join(", "),
+  condList: c.colors.map((x) => ({ color: x.color, label: `${x.n} ${x.color}` })),
+  shadow: c["Shadow Condition"],
+  traits: c.traits,
+  text: c.abilities.map((a) => cardTextHtml(a)),
+  burst: c.Burst ? cardTextHtml(c.Burst) : null,
+  epic: !!c.Burst?.startsWith("[EPIC Rule]"),
+  flavor: c.FlavorText,
+  img: c.image,
+}));
+---
+<Base
+  title="Cards"
+  nav="cards"
+  description={`All ${cards.length} Trinity Draft cards from Blaze (TD-01) and Phantom (TD-02) in English, with search and filters.`}
+>
+  <div class="cards-page">
+    <div class="toolbar">
+      <label class="search">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></g></svg>
+        <span class="vh">Search cards</span>
+        <input id="q" type="search" placeholder="Search by name, Japanese name, card text or ID" autocomplete="off" />
+      </label>
+      <button type="button" class="btn" id="filters-btn" aria-expanded="false" aria-controls="filters">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M3 5h18l-7 8v6l-4-2v-4z"/></svg>
+        Filters<span class="badge-dot is-empty" id="active-count" aria-hidden="true">0</span>
+      </button>
+      <label class="sort">
+        <span class="vh">Sort by</span>
+        <select id="sort" class="btn">
+          <option value="rarity">Sort: Rarity</option>
+          <option value="number">Sort: Card number</option>
+          <option value="cost">Sort: Cost</option>
+          <option value="power">Sort: Power</option>
+          <option value="name">Sort: Name</option>
+        </select>
+      </label>
+      <p class="count" aria-live="polite"><span id="count">{cards.length}</span> cards</p>
+    </div>
+
+    <div class="filters" id="filters" hidden>
+      <fieldset data-facet="set" data-mode="any">
+        <legend>Set</legend>
+        <div class="chips">{SETS.map((s) => <button type="button" data-value={s.key}>{s.name}</button>)}</div>
+      </fieldset>
+      <fieldset data-facet="color" data-mode="all">
+        <legend>Color <small>cards with every color you pick</small></legend>
+        <div class="chips">
+          {[...COLORS, "Colorless"].map((c) => (
+            <button type="button" data-value={c}><i class={`dot ${c.toLowerCase()}`} aria-hidden="true"></i>{c}</button>
+          ))}
+        </div>
+      </fieldset>
+      <fieldset data-facet="rarity" data-mode="any">
+        <legend>Rarity</legend>
+        <div class="chips">{RARITIES.map((r) => <button type="button" data-value={r}>{r}</button>)}</div>
+      </fieldset>
+      <fieldset data-facet="type" data-mode="type">
+        <legend>Card type <small>add Shadow to see only Shadow cards</small></legend>
+        <div class="chips">{TYPES.map((t) => <button type="button" data-value={t}>{t}</button>)}</div>
+      </fieldset>
+      <fieldset data-facet="cost" data-mode="any">
+        <legend>Cost</legend>
+        <div class="chips">{COSTS.map((c) => <button type="button" class="num" data-value={c}>{c}</button>)}</div>
+      </fieldset>
+      <fieldset data-facet="trait" data-mode="all" class="wide">
+        <legend>Trait <small>cards with every trait you pick</small></legend>
+        <div class="chips">{traits.map((t) => <button type="button" data-value={t}>{t}</button>)}</div>
+      </fieldset>
+      <div class="filters-foot"><button type="button" class="link-btn" id="clear">Clear all filters</button></div>
+    </div>
+
+    <div class="grid" id="grid">
+      {cards.map((c) => (
+        <a
+          class="tile"
+          href={`?card=${c.id}`}
+          data-id={c.id}
+          data-set={c.set === "shared" ? "blaze|phantom" : c.set}
+          data-color={c.colorKeys.join("|")}
+          data-rarity={c.Rarity}
+          data-type={[baseType(c.CardType), ...(c.CardType.startsWith("Shadow") ? ["Shadow"] : [])].join("|")}
+          data-cost={costKey(c.Cost)}
+          data-costn={typeof c.Cost === "number" ? c.Cost : 99}
+          data-power={typeof c.Power === "number" ? c.Power : -1}
+          data-trait={c.traits.join("|")}
+          data-rank={c.rarityRank}
+          data-setrank={setRank[c.set]}
+          data-num={c.numberKey}
+          data-name={c["English Name"]}
+          data-search={searchText(c)}
+        >
+          <img src={c.thumb} alt={c["English Name"]} width="480" height="670" loading="lazy" decoding="async" />
+        </a>
+      ))}
+    </div>
+    <div class="empty" id="empty" hidden>
+      <p>No cards match. Try removing a filter or changing the search.</p>
+      <button type="button" class="btn" id="clear2">Clear all filters</button>
+    </div>
+  </div>
+
+  <dialog class="card-dialog" id="card-dialog" aria-labelledby="cd-name">
+    <div class="cd-head">
+      <div class="cd-title">
+        <h2 id="cd-name" tabindex="-1" autofocus></h2>
+        <p class="cd-meta" id="cd-meta"></p>
+      </div>
+      <div class="cd-actions">
+        <span class="pill" id="cd-type"></span>
+        <button type="button" class="icon-btn" id="cd-link" title="Copy link to this card" aria-label="Copy link to this card">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></g></svg>
+        </button>
+        <button type="button" class="icon-btn" id="cd-close" title="Close" aria-label="Close">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M6 6l12 12M18 6 6 18"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="cd-body">
+      <img id="cd-img" alt="" width="744" height="1039" />
+      <div class="cd-info">
+        <p class="cd-jp" lang="ja" id="cd-jp"></p>
+        <div class="stats" id="cd-stats"></div>
+        <div class="tags" id="cd-traits"></div>
+        <div class="textbox" id="cd-text"></div>
+        <p class="copied" id="cd-copied" role="status"></p>
+      </div>
+    </div>
+    <div class="cd-foot">
+      <button type="button" class="btn" id="cd-prev">Previous</button>
+      <button type="button" class="btn" id="cd-next">Next</button>
+    </div>
+  </dialog>
+
+  <script type="application/json" id="card-data" set:html={JSON.stringify(data).replace(/</g, "\\u003c")} />
+
+  <script is:inline>
+    (() => {
+      const FACETS = ["set", "color", "rarity", "type", "cost", "trait"];
+      const MODE = Object.fromEntries([...document.querySelectorAll("[data-facet]")].map((f) => [f.dataset.facet, f.dataset.mode]));
+      const CARDS = Object.fromEntries(JSON.parse(document.getElementById("card-data").textContent).map((c) => [c.id, c]));
+      const grid = document.getElementById("grid");
+      const tiles = [...grid.querySelectorAll(".tile")];
+      const q = document.getElementById("q");
+      const sort = document.getElementById("sort");
+      const panel = document.getElementById("filters");
+      const fbtn = document.getElementById("filters-btn");
+      const state = Object.fromEntries(FACETS.map((f) => [f, new Set()]));
+      let shown = tiles;
+
+      // ------------------------------------------------------------ URL <-> state
+      const params = new URLSearchParams(location.search);
+      for (const f of FACETS) for (const v of (params.get(f) || "").split(",").filter(Boolean)) state[f].add(v);
+      q.value = params.get("q") || "";
+      if (params.get("sort")) sort.value = params.get("sort");
+      if (!sort.value) sort.value = "rarity";
+
+      function listUrl() {
+        const p = new URLSearchParams();
+        if (q.value.trim()) p.set("q", q.value.trim());
+        for (const f of FACETS) if (state[f].size) p.set(f, [...state[f]].join(","));
+        if (sort.value !== "rarity") p.set("sort", sort.value);
+        return p;
+      }
+      function writeUrl(cardId, push) {
+        const p = listUrl();
+        if (cardId) p.set("card", cardId);
+        const s = p.toString().replace(/%2C/g, ",");
+        history[push ? "pushState" : "replaceState"](null, "", s ? "?" + s : location.pathname);
+      }
+
+      // ------------------------------------------------------------ search
+      // Words match anywhere; [bracketed], <angled>, (parenthesised) and "quoted" parts match as a whole.
+      const terms = (s) => (s.toLowerCase().match(/\[[^\]]*\]?|<[^>]*>?|\([^)]*\)?|"[^"]*"?|\S+/g) || [])
+        .map((t) => t.replace(/^"|"$/g, "").trim()).filter(Boolean);
+
+      const matches = (t, words) => {
+        for (const f of FACETS) {
+          if (!state[f].size) continue;
+          const have = (t.dataset[f] || "").split("|");
+          const want = [...state[f]];
+          let ok;
+          if (MODE[f] === "all") ok = want.every((v) => have.includes(v));
+          else if (MODE[f] === "type") {
+            // Shadow narrows the other types: Shadow + Shot Spell = Shadow Shot Spells only
+            const base = want.filter((v) => v !== "Shadow");
+            ok = (!want.includes("Shadow") || have.includes("Shadow")) && (!base.length || base.some((v) => have.includes(v)));
+          } else ok = want.some((v) => have.includes(v));
+          if (!ok) return false;
+        }
+        return words.every((w) => t.dataset.search.includes(w));
+      };
+
+      const num = (t, k) => Number(t.dataset[k]);
+      const byDefault = (a, b) => num(a, "rank") - num(b, "rank") || num(a, "setrank") - num(b, "setrank") || num(a, "num") - num(b, "num");
+      const SORTS = {
+        rarity: byDefault,
+        number: (a, b) => num(a, "setrank") - num(b, "setrank") || num(a, "num") - num(b, "num"),
+        cost: (a, b) => num(a, "costn") - num(b, "costn") || byDefault(a, b),
+        power: (a, b) => num(b, "power") - num(a, "power") || byDefault(a, b),
+        name: (a, b) => a.dataset.name.localeCompare(b.dataset.name),
+      };
+
+      function update() {
+        const words = terms(q.value);
+        shown = tiles.filter((t) => matches(t, words)).sort(SORTS[sort.value] || byDefault);
+        grid.replaceChildren(...shown);
+        document.getElementById("count").textContent = shown.length;
+        document.getElementById("empty").hidden = shown.length > 0;
+        const n = FACETS.reduce((s, f) => s + state[f].size, 0);
+        const badge = document.getElementById("active-count");
+        badge.classList.toggle("is-empty", !n); badge.textContent = n;
+        for (const fs of document.querySelectorAll("[data-facet]"))
+          for (const b of fs.querySelectorAll("button"))
+            b.setAttribute("aria-pressed", state[fs.dataset.facet].has(b.dataset.value) ? "true" : "false");
+        if (!dialog.open) writeUrl(null, false);
+      }
+
+      const setPanel = (open) => { panel.hidden = !open; fbtn.setAttribute("aria-expanded", String(open)); };
+      fbtn.addEventListener("click", () => setPanel(panel.hidden));
+      if (FACETS.some((f) => state[f].size)) setPanel(true);
+
+      for (const fs of document.querySelectorAll("[data-facet]"))
+        fs.addEventListener("click", (e) => {
+          const b = e.target.closest("button");
+          if (!b) return;
+          const s = state[fs.dataset.facet];
+          s.has(b.dataset.value) ? s.delete(b.dataset.value) : s.add(b.dataset.value);
+          update();
+        });
+      const clear = () => { for (const f of FACETS) state[f].clear(); q.value = ""; update(); };
+      document.getElementById("clear").addEventListener("click", clear);
+      document.getElementById("clear2").addEventListener("click", clear);
+      let timer;
+      q.addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(update, 120); });
+      sort.addEventListener("change", update);
+
+      // ------------------------------------------------------------ card popup
+      const dialog = document.getElementById("card-dialog");
+      const $ = (id) => document.getElementById(id);
+      const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      let current = null;
+
+      function stat(label, value, cls = "") {
+        return `<div class="stat ${cls}"><span>${label}</span><b>${value}</b></div>`;
+      }
+      function render(c) {
+        current = c.id;
+        $("cd-name").textContent = c.name;
+        $("cd-meta").textContent = `${c.num} · ${c.rarity} · ${c.set}`;
+        $("cd-type").textContent = c.type;
+        $("cd-jp").textContent = c.jp;
+        $("cd-img").src = c.img;
+        $("cd-img").alt = `${c.name} (English card image)`;
+        let s = "";
+        const each = (list, cls) => list.map((x) => `<span class="cv"><i class="dot ${cls} ${x.color.toLowerCase()}"></i>${esc(x.label)}</span>`).join("");
+        s += stat("Color", each(c.color.map((x) => ({ color: x, label: x })), ""));
+        if (c.shadow) s += stat("Shadow Condition", esc(c.shadow), "wide");
+        else {
+          s += stat("Cost", c.cost ?? "–");
+          s += stat("Color Condition", c.cond === "Colorless"
+            ? each([{ color: "Colorless", label: "Colorless" }], "dia")
+            : each(c.condList, "dia"));
+        }
+        if (c.power !== null) s += stat("Power", c.power);
+        if (c.brk !== null) s += stat("Break", c.brk);
+        $("cd-stats").innerHTML = s;
+        $("cd-traits").innerHTML = c.traits.map((t) => `<a class="pill" href="?trait=${encodeURIComponent(t)}">${esc(t)}</a>`).join("");
+        let t = c.text.map((h) => `<p>${h}</p>`).join("");
+        if (c.burst) t += `<p class="burst">${c.burst}</p>`;
+        if (!c.text.length && !c.burst) t += `<p class="muted">No card text.</p>`;
+        if (c.flavor) t += `<p class="flavor">${esc(c.flavor)}</p>`;
+        $("cd-text").innerHTML = t;
+        $("cd-copied").textContent = "";
+        const i = shown.findIndex((x) => x.dataset.id === c.id);
+        $("cd-prev").disabled = i <= 0;
+        $("cd-next").disabled = i < 0 || i >= shown.length - 1;
+      }
+      function open(id, push) {
+        const c = CARDS[id];
+        if (!c) return;
+        render(c);
+        if (!dialog.open) dialog.showModal();
+        writeUrl(id, push);
+      }
+      function close() {
+        if (dialog.open) dialog.close();
+      }
+      dialog.addEventListener("close", () => { current = null; writeUrl(null, false); });
+      dialog.addEventListener("click", (e) => { if (e.target === dialog) close(); });   // click on the backdrop
+      $("cd-close").addEventListener("click", close);
+      const step = (d) => {
+        const i = shown.findIndex((x) => x.dataset.id === current);
+        const n = shown[i + d];
+        if (n) open(n.dataset.id, false);
+      };
+      $("cd-prev").addEventListener("click", () => step(-1));
+      $("cd-next").addEventListener("click", () => step(1));
+      dialog.addEventListener("keydown", (e) => {
+        if (e.target.closest("input, select")) return;
+        if (e.key === "ArrowLeft") step(-1);
+        if (e.key === "ArrowRight") step(1);
+      });
+      $("cd-link").addEventListener("click", async () => {
+        const url = new URL(location.pathname, location.href);
+        url.searchParams.set("card", current);
+        try { await navigator.clipboard.writeText(url.href); $("cd-copied").textContent = "Link copied."; }
+        catch { $("cd-copied").textContent = url.href; }
+      });
+      $("cd-traits").addEventListener("click", (e) => {
+        const a = e.target.closest("a.pill");
+        if (!a) return;
+        e.preventDefault();
+        const t = new URLSearchParams(a.getAttribute("href").slice(1)).get("trait");
+        close();
+        for (const f of FACETS) state[f].clear();
+        state.trait.add(t); q.value = ""; setPanel(true); update();
+      });
+      grid.addEventListener("click", (e) => {
+        const a = e.target.closest(".tile");
+        if (!a || e.metaKey || e.ctrlKey || e.shiftKey) return;
+        e.preventDefault();
+        open(a.dataset.id, true);
+      });
+      window.addEventListener("popstate", () => {
+        const id = new URLSearchParams(location.search).get("card");
+        if (id) open(id, false); else if (dialog.open) dialog.close();
+      });
+
+      update();
+      if (params.get("card")) open(params.get("card"), false);
+    })();
+  </script>
+</Base>

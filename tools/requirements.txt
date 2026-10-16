@@ -1,0 +1,3 @@
+# Overlay tool: validate_cards.py, render_cards.py, export_cards.py
+pillow>=10.0     # AVIF web export needs pillow>=11.3; everything else works on 10+
+pypdf>=4.0     # render_holes.py --extract only

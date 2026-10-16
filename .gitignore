@@ -1,0 +1,14 @@
+# Files the overlay tool creates or needs locally - not part of the repository
+cards/*_cards_hq/
+out/master/
+out/web/
+out/*_report.txt
+validation_report.txt
+__pycache__/
+*.pyc
+
+# Website: dependencies, build output and the card images copied in from out/tts
+site/node_modules/
+site/dist/
+site/.astro/
+site/public/img/

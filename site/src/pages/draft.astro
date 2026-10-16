@@ -1,0 +1,195 @@
+---
+import Base from "../layouts/Base.astro";
+import { loadCards } from "../lib/cards";
+import { rarityRows, gameDistribution, hyper, BOX, GAME, PACK_SIZE, PACKS_PER_BOX, PACKS_PER_GAME, PLAYERS } from "../lib/odds";
+
+const rows = rarityRows();
+const epics = loadCards().filter((c) => c.set === "blaze" && c.Rarity === "Epic").length;
+const distinct = rows.reduce((s, r) => s + r.distinct, 0);
+
+const pct = (p: number) => {
+  const v = p * 100;
+  if (v >= 99.95) return ">99.9%";
+  if (v > 0 && v < 0.05) return "<0.1%";
+  return `${v.toFixed(v < 10 ? 1 : 0)}%`;
+};
+const dec = (n: number, d = 1) => n.toFixed(d).replace(/\.0+$/, "");
+
+// Charts: how many cards of a rarity are in one game
+const CHARTS = ["Legend", "Rare", "Void"].map((rarity) => {
+  const row = rows.find((r) => r.rarity === rarity)!;
+  const dist = gameDistribution(row.inBox).filter((d) => d.p >= 0.001);
+  const max = Math.max(...dist.map((d) => d.p));
+  return { rarity, row, dist, max };
+});
+
+// A single pack: chance of 0 / 1 / 2 / 3+ Legends, and of at least one Rare or Legend
+const legends = rows.find((r) => r.rarity === "Legend")!;
+const rares = rows.find((r) => r.rarity === "Rare")!;
+const packLeg = [0, 1, 2].map((x) => hyper(BOX, legends.inBox, PACK_SIZE, x));
+const packRareOrLeg = 1 - hyper(BOX, legends.inBox + rares.inBox, PACK_SIZE, 0);
+---
+<Base
+  title="Box & Draft Odds"
+  nav="draft"
+  description="How many copies of each Trinity Draft card come in a box, and the odds of seeing each rarity in a 3-player draft."
+>
+  <div class="prose-page odds">
+    <h1>Box &amp; Draft Odds</h1>
+    <p class="lead">
+      A box of one expansion holds {BOX} draft cards. Players shuffle them all and deal them into
+      {PACKS_PER_BOX} packs of {PACK_SIZE}. A standard 3-player game opens {PACKS_PER_GAME} of those packs,
+      3 per player, so {GAME} cards are drafted: exactly a third of the box. Blaze and Phantom boxes are built the same way.
+    </p>
+
+    <section>
+      <h2>What's in a box</h2>
+      <table class="num-table">
+        <thead>
+          <tr>
+            <th scope="col">Rarity</th>
+            <th scope="col">Different cards</th>
+            <th scope="col">Copies of each</th>
+            <th scope="col">Cards in a box</th>
+            <th scope="col">Per pack, on average</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr>
+              <th scope="row"><a class={`rarity r-${r.rarity.toLowerCase()}`} href={`index.html?rarity=${r.rarity}`}>{r.rarity}</a></th>
+              <td>{r.distinct}</td>
+              <td>{r.copies}</td>
+              <td>{r.inBox}</td>
+              <td>{dec(r.perPack, 2)}</td>
+            </tr>
+          ))}
+        </tbody>
+        <tfoot>
+          <tr><th scope="row">Total</th><td>{distinct}</td><td></td><td>{BOX}</td><td>{PACK_SIZE}</td></tr>
+        </tfoot>
+      </table>
+      <p>
+        The {epics} <a href="index.html?rarity=Epic">Epic cards</a> are not in the packs.
+        Every player is dealt one of each before the draft and picks one of them for the Battle.
+      </p>
+    </section>
+
+    <section>
+      <h2>One game</h2>
+      <p>
+        Every card in the {PACKS_PER_GAME} open packs is drafted by someone, so between them the three
+        players always take all {GAME} cards. Who ends up with which card depends on the picks, so the
+        per-player number is the average share, not a promise.
+      </p>
+      <table class="num-table">
+        <thead>
+          <tr>
+            <th scope="col">Rarity</th>
+            <th scope="col">In the game, on average</th>
+            <th scope="col">Per player, on average</th>
+            <th scope="col">Chance a given card is in the game</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr>
+              <th scope="row">{r.rarity}</th>
+              <td>{dec(r.perGame)}</td>
+              <td>{dec(r.perPlayer)}</td>
+              <td>{pct(r.oneCardInGame)} <span class="muted">({r.copies === 1 ? "1 copy" : `${r.copies} copies`} in the box)</span></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>How many will turn up</h2>
+      <p>The chance of each total in one game. Pick a rarity:</p>
+      <div class="chart-tabs" role="tablist" aria-label="Rarity">
+        {CHARTS.map((ch, i) => (
+          <button type="button" role="tab" id={`tab-${ch.rarity}`} aria-controls={`chart-${ch.rarity}`} aria-selected={i === 0 ? "true" : "false"}>
+            {ch.rarity}
+          </button>
+        ))}
+      </div>
+      {CHARTS.map((ch, i) => (
+        <figure class="dist" id={`chart-${ch.rarity}`} role="tabpanel" aria-labelledby={`tab-${ch.rarity}`} hidden={i !== 0}>
+          <figcaption>
+            {ch.rarity} cards in one game ({ch.row.inBox} in the box, {dec(ch.row.perGame)} on average)
+          </figcaption>
+          <div class="bars" style={`--n:${ch.dist.length}`}>
+            {ch.dist.map((d) => (
+              <div class="bar" tabindex="0" style={`--h:${(d.p / ch.max) * 100}%`}>
+                <span class="tip">{d.x} {ch.rarity}: {pct(d.p)}<br />{d.x} or more: {pct(d.atLeast)}</span>
+                <span class="fill"></span>
+                <span class="x">{d.x}</span>
+              </div>
+            ))}
+          </div>
+          <details class="table-view">
+            <summary>Show as a table</summary>
+            <table class="num-table compact">
+              <thead><tr><th scope="col">{ch.rarity} cards</th><th scope="col">Exactly</th><th scope="col">This many or more</th></tr></thead>
+              <tbody>
+                {ch.dist.map((d) => <tr><th scope="row">{d.x}</th><td>{pct(d.p)}</td><td>{pct(d.atLeast)}</td></tr>)}
+              </tbody>
+            </table>
+          </details>
+        </figure>
+      ))}
+    </section>
+
+    <section>
+      <h2>One pack</h2>
+      <table class="num-table">
+        <tbody>
+          <tr><th scope="row">No Legend</th><td>{pct(packLeg[0])}</td></tr>
+          <tr><th scope="row">Exactly 1 Legend</th><td>{pct(packLeg[1])}</td></tr>
+          <tr><th scope="row">2 or more Legends</th><td>{pct(1 - packLeg[0] - packLeg[1])}</td></tr>
+          <tr><th scope="row">At least 1 Rare or Legend</th><td>{pct(packRareOrLeg)}</td></tr>
+        </tbody>
+      </table>
+      <p>
+        You see every card of the 3 packs you open before anyone else picks from them: {PACK_SIZE * 3} cards,
+        with a {pct(1 - hyper(BOX, legends.inBox, PACK_SIZE * 3, 0))} chance of at least one Legend among them.
+      </p>
+    </section>
+
+    <section class="method">
+      <h2>How these are worked out</h2>
+      <p>
+        The rulebook has you make the packs yourself: shuffle all {BOX} cards face down and deal them out
+        {PACK_SIZE} at a time. Each number here is a hypergeometric probability for that: drawing {GAME} cards
+        (a game) or {PACK_SIZE} cards (a pack) from {BOX} without putting any back. The rulebook also suggests
+        checking that Rares and Legends aren't bunched together while you shuffle, which spreads them a little
+        more evenly between packs than pure chance would.
+      </p>
+    </section>
+  </div>
+
+  <script is:inline>
+    (() => {
+      const tabs = [...document.querySelectorAll(".chart-tabs [role=tab]")];
+      const select = (t) => {
+        for (const o of tabs) {
+          const on = o === t;
+          o.setAttribute("aria-selected", on ? "true" : "false");
+          o.tabIndex = on ? 0 : -1;
+          document.getElementById(o.getAttribute("aria-controls")).hidden = !on;
+        }
+      };
+      tabs.forEach((t, i) => {
+        t.tabIndex = i === 0 ? 0 : -1;
+        t.addEventListener("click", () => select(t));
+        t.addEventListener("keydown", (e) => {
+          const d = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
+          if (!d) return;
+          const n = tabs[(i + d + tabs.length) % tabs.length];
+          select(n); n.focus();
+        });
+      });
+    })();
+  </script>
+</Base>
